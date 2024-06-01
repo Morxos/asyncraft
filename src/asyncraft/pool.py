@@ -1,5 +1,6 @@
 import asyncio
 from concurrent.futures.thread import ThreadPoolExecutor
+from typing import Union
 
 from asyncraft.message import Message
 from asyncraft.handler import SyncHandler, AsyncHandler
@@ -19,7 +20,7 @@ class AbstractPool:
 
 class Pool(AbstractPool):
 
-    def __init__(self, max_threads: int | None = None):
+    def __init__(self, max_threads: Union[int, None] = None):
         self.max_threads = max_threads
         self.executor = ThreadPoolExecutor(max_threads)
 
