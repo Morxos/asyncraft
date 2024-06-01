@@ -1,10 +1,10 @@
 from typing import List, Callable, Any
 
-from asyncraft.message import Message
+from asyncraft.message import Message, KeyType
 
 
 class SyncHandler:
-    def __init__(self, keys: List[int | float | str | bool | tuple | frozenset], callback: Callable[[Message], Any] = None):
+    def __init__(self, keys: List[KeyType], callback: Callable[[Message], Any] = None):
         self.keys = keys
         self.callback = callback
 
@@ -15,7 +15,7 @@ class SyncHandler:
 
 
 class AsyncHandler:
-    def __init__(self, keys: List[int | float | str | bool | tuple | frozenset], callback: Callable[[Message], Any] = None):
+    def __init__(self, keys: List[KeyType], callback: Callable[[Message], Any] = None):
         self.keys = keys
         self.callback = callback
 

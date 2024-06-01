@@ -1,7 +1,7 @@
 import asyncio
 from typing import List, Dict
 
-from asyncraft.message import Message
+from asyncraft.message import Message, KeyType
 from asyncraft.handler import AsyncHandler, SyncHandler
 from asyncraft.pool import AbstractPool, Pool
 
@@ -40,13 +40,12 @@ class AbstractBroker:
 class Broker(AbstractBroker):
 
     def __init__(self, pool: AbstractPool = None):
-        self.sync_handlers: Dict[(int, float, complex, bool, str, tuple, frozenset), List[SyncHandler]] = {}
-        self.async_handlers: Dict[(int, float, complex, bool, str, tuple, frozenset), List[AsyncHandler]] = {}
+        self.sync_handlers: Dict[KeyType, List[SyncHandler]] = {}
+        self.async_handlers: Dict[KeyType, List[AsyncHandler]] = {}
         if pool is None:
             self.pool = Pool()
         else:
             self.pool = pool
-
 
     def register_handler(self, handler: SyncHandler):
         for key in handler.keys:
