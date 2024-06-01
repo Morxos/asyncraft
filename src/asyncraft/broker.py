@@ -77,14 +77,22 @@ class Broker(AbstractBroker):
     async def async_broadcast_message(self, message: Message) -> None:
         if message is None:
             return
+        already_contacted = set()
+        #Needed to contact handlers only once
         message_key = message.key if isinstance(message.key, tuple) else (message.key,)
         for key in message_key:
             if key in self.sync_handlers:
                 for handler in self.sync_handlers[key]:
+                    if handler in already_contacted:
+                        continue
                     await self.pool.execute_handler(handler, message, self.broadcast_message)
+                    already_contacted.add(handler)
             if key in self.async_handlers:
                 for handler in self.async_handlers[key]:
+                    if handler in already_contacted:
+                        continue
                     await self.pool.execute_async_handler(handler, message, self.broadcast_message)
+                    already_contacted.add(handler)
 
     def shutdown(self):
         self.pool.shutdown()

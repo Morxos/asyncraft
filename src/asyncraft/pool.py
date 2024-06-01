@@ -9,12 +9,17 @@ from asyncraft.handler import SyncHandler, AsyncHandler
 class AbstractPool:
 
     async def execute_handler(self, handler: SyncHandler, message: Message, result_callback=None) -> None:
+        """Execute a sync handler with a message and a result callback. If no result callback is provided, the handler
+        will be executed without a callback."""
         raise NotImplementedError
 
     async def execute_async_handler(self, handler: AsyncHandler, message: Message, result_callback=None) -> None:
+        """Execute an async handler with a message and a result callback. If no result callback is provided, the handler
+        will be executed without a callback."""
         raise NotImplementedError
 
     def shutdown(self) -> None:
+        """Shutdown the pool"""
         raise NotImplementedError
 
 
