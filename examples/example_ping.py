@@ -4,7 +4,7 @@ import time
 import asyncraft
 
 
-@asyncraft.asyncraft_handler("Ping", keys=["Ping"])
+@asyncraft.asyncraft_handler(keys=["Ping"])
 def ping_handler_function(message):
     """This is a sync handler that will respond to the Pong handler. It will be executed in a separate thread."""
     print(f"Received {message.key} with value {message.value}")
@@ -12,7 +12,7 @@ def ping_handler_function(message):
     return asyncraft.Message("Pong", message.value + 1)
 
 
-@asyncraft.asyncraft_handler("Pong", keys=["Pong"])
+@asyncraft.asyncraft_handler(keys=["Pong"])
 async def pong_handler_function(message):
     """This is an async handler that will respond to the Ping handler. It will be executed in the event loop."""
     print(f"Received {message.key} with value {message.value}")

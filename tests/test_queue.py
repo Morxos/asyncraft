@@ -9,8 +9,8 @@ total_count = 2000
 
 
 def test_queue():
-    asyncraft.reset()
-    queue = MessageQueue("queue1", ["Key", "Key1"])
+    asyncraft.init()
+    queue = MessageQueue(["Key", "Key1"])
     asyncraft.register_queue(queue)
 
     async def reader_1():

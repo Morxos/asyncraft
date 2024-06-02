@@ -6,7 +6,7 @@ from asyncraft.message import Message, KeyType
 class AbstractHandler:
     handler_type: Literal["Sync", "Async"]
 
-    def __init__(self, identifier: str, keys: List[KeyType], callback: Callable[[Message], Any] = None):
+    def __init__(self, keys: List[KeyType], callback: Callable[[Message], Any] = None,identifier: str = None):
         self.keys = keys
         self.callback = callback
         self.identifier = identifier

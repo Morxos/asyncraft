@@ -10,6 +10,7 @@ from asyncraft.pool import AbstractPool, Pool
 
 class AbstractBroker:
     loop: asyncio.AbstractEventLoop
+    pool: AbstractPool
 
     def broadcast_message(self, message: Message) -> None:
         """Broadcast a message to all handlers. Is thread safe."""

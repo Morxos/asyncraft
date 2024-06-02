@@ -47,10 +47,22 @@ async def broadcast_and_wait(message: Message, return_keys: List[KeyType],
 
 def register_handler(handler: Union[SyncHandler, AsyncHandler]):
     """Register a sync handler to the broker, which will be executed in a thread pool."""
+    if handler.identifier is None:
+        handler.identifier = _global_broker.get_next_free_identifier()
     _global_broker.register_handler(handler)
 
 
-def asyncraft_handler(identifier: str, keys: List[KeyType]):
+def unregister_handler(handler: Union[str, SyncHandler, AsyncHandler]):
+    """Unregister a handler from the broker."""
+    _global_broker.unregister_handler(handler)
+
+
+def asyncraft_handler(keys: List[KeyType], identifier: str = None):
+    """Decorator for registering a handler to the broker."""
+
+    if identifier is None:
+        identifier = _global_broker.get_next_free_identifier()
+
     def decorator(func):
         if asyncio.iscoroutinefunction(func):
             register_handler(AsyncHandler(identifier=identifier, keys=keys, callback=func))
@@ -63,16 +75,16 @@ def asyncraft_handler(identifier: str, keys: List[KeyType]):
 
 def register_queue(queue: MessageQueue):
     """Register a message queue to the broker, which can be used to receive messages."""
+    if queue.identifier is None:
+        queue.identifier = _global_broker.get_next_free_identifier()
     async_handler = AsyncHandler(identifier=queue.identifier, keys=queue.keys, callback=queue.put)
     register_handler(async_handler)
 
 
-def reset(new_event_loop: bool = False):
-    """Reset the global broker. Removes all handlers and creates a new event loop if desired. Use with caution."""
+def init(new_event_loop: bool = False):
+    """Initialize the global broker. If new_event_loop is True, a new event loop will be created."""
     global _global_broker
     global _event_loop
-    if _global_broker is not None:
-        _global_broker.shutdown()
 
     try:
         asyncio.get_running_loop()
@@ -85,9 +97,12 @@ def reset(new_event_loop: bool = False):
         _event_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(_event_loop)
     _event_loop = asyncio.get_event_loop()
-    _global_broker = Broker()
-    _global_broker.loop = _event_loop
+    if _global_broker is None:
+        _global_broker = Broker(loop=_event_loop)
+    else:
+        _global_broker.loop = _event_loop
+        _global_broker.pool.loop = _event_loop
 
 
 #Initializes the global broker
-reset()
+init()

@@ -28,7 +28,7 @@ from asyncraft.handler import SyncHandler, AsyncHandler
 ...
 # Create a sync handler with decorator.
 # All sync handlers will be executed in a separate thread of a thread pool.
-@asyncraft.asyncraft_handler("handler_0", keys=["key"])
+@asyncraft.asyncraft_handler(keys=["key"])
 def handler_0(message):
     print(message)
     #Handlers can return a message
@@ -37,7 +37,7 @@ def handler_0(message):
 
 # Create an async handler with decorator
 # All async handlers will be executed in an asyncio event loop.
-@asyncraft.asyncraft_handler("handler_1", keys=["key"])
+@asyncraft.asyncraft_handler(keys=["key"])
 async def handler_1(message):
     print(message)
 ...
@@ -47,7 +47,7 @@ async def handler_1(message):
 def handler_2_function(message):
     print(message)
 #Then create the handler
-handler = SyncHandler("handler_2", keys=["key"], callback=handler_2_function)
+handler = SyncHandler(keys=["key"], callback=handler_2_function)
 #Register the handler
 asyncraft.register_handler(handler)
 
@@ -58,7 +58,7 @@ asyncraft.register_handler(handler)
 async def handler_3_function(message):
     print(message)
 #Then create the handler
-handler = AsyncHandler("handler_3", keys=["key"], callback=handler_3_function)
+handler = AsyncHandler(keys=["key"], callback=handler_3_function)
 #Register the handler
 asyncraft.register_handler(handler)
 ...
@@ -73,7 +73,7 @@ import asyncraft
 ...
 #Create a queue which listenes to keys 'Key' and 'Key1'.
 #All messages with at least one of those keys will be stored in the queue.
-queue = MessageQueue("queue_1", ["Key", "Key1"])
+queue = MessageQueue(["Key", "Key1"])
 #Register the queue
 asyncraft.register_queue(queue)
 ...
@@ -107,7 +107,7 @@ import time
 import asyncraft
 
 
-@asyncraft.asyncraft_handler("Ping", keys=["Ping"])
+@asyncraft.asyncraft_handler(keys=["Ping"])
 def ping_handler_function(message):
     """This is a sync handler that will respond to the Pong handler. It will be executed in a separate thread."""
     print(f"Received {message.key} with value {message.value}")
@@ -115,7 +115,7 @@ def ping_handler_function(message):
     return asyncraft.Message("Pong", message.value + 1)
 
 
-@asyncraft.asyncraft_handler("Pong", keys=["Pong"])
+@asyncraft.asyncraft_handler(keys=["Pong"])
 async def pong_handler_function(message):
     """This is an async handler that will respond to the Ping handler. It will be executed in the event loop."""
     print(f"Received {message.key} with value {message.value}")
@@ -184,7 +184,7 @@ async def main():
 
 
 if __name__ == "__main__":
-    queue = MessageQueue("queue1", ["Key", "Key1"])
+    queue = MessageQueue(["Key", "Key1"])
     asyncraft.register_queue(queue)
     asyncraft.start(main())
 ```

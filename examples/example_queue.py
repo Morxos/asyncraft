@@ -47,6 +47,6 @@ async def main():
 
 
 if __name__ == "__main__":
-    queue = MessageQueue("queue1", ["Key", "Key1"])
+    queue = MessageQueue(["Key", "Key1"])
     asyncraft.register_queue(queue)
     asyncraft.start(main())

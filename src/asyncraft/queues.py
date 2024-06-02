@@ -26,8 +26,8 @@ class AbstractMessageQueue:
 
 
 class MessageQueue(AbstractMessageQueue):
-    def __init__(self, identifier: str, keys: List[KeyType], max_items: int = -1,
-                 eviction_policy: Literal["FIFO"] = "FIFO"):
+    def __init__(self, keys: List[KeyType], max_items: int = -1,
+                 eviction_policy: Literal["FIFO"] = "FIFO",identifier: str = None):
         self.identifier = identifier
         self.queue: List[Message] = []
         self.keys = keys

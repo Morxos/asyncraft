@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def test_asyncraft():
-    asyncraft.reset()
+    asyncraft.init()
 
     received_sleep_async = False
     received_sleep_sync = False
@@ -29,11 +29,11 @@ def test_asyncraft():
         time.sleep(1)
         return Message("Key2", "Calling async")
 
-    asyncraft.register_handler(asyncraft.SyncHandler("1", keys=["Key1", "Key3"],
+    asyncraft.register_handler(asyncraft.SyncHandler(keys=["Key1", "Key3"],
                                                      callback=call_back_value_sync)
                                )
 
-    asyncraft.register_handler(asyncraft.AsyncHandler("2", keys=["Key2"],
+    asyncraft.register_handler(asyncraft.AsyncHandler(keys=["Key2"],
                                                       callback=call_back_value_async)
                                )
 
@@ -51,10 +51,10 @@ def test_asyncraft():
 
 
 def test_asyncraft_cal_and_wait():
-    asyncraft.reset()
+    asyncraft.init()
     called = 0
 
-    @asyncraft.asyncraft_handler("2", keys=["Key2"])
+    @asyncraft.asyncraft_handler(keys=["Key2"])
     async def call_back_value_async(message: Message):
         assert message.key == "Key2"
         assert message.value == "Calling async"
@@ -62,7 +62,7 @@ def test_asyncraft_cal_and_wait():
         called += 1
         return Message("Key4", "Sleep Finished!")
 
-    @asyncraft.asyncraft_handler("1", keys=["Key1"])
+    @asyncraft.asyncraft_handler(keys=["Key1"])
     def call_back_value_sync(message: Message):
         assert message.key == "Key1"
         assert message.value == "Calling sync"
@@ -72,10 +72,10 @@ def test_asyncraft_cal_and_wait():
 
     async def main():
         nonlocal called
-        message = await asyncraft.broadcast_and_wait(Message(("Key1"), "Calling sync"), ["Key3"])
+        message = await asyncraft.broadcast_and_wait(Message("Key1", "Calling sync"), ["Key3"])
         assert message.key == "Key3"
         assert message.value == "Calling async"
-        message = await asyncraft.broadcast_and_wait(Message(("Key2"), "Calling async"), ["Key4"])
+        message = await asyncraft.broadcast_and_wait(Message("Key2", "Calling async"), ["Key4"])
         assert message.key == "Key4"
         assert message.value == "Sleep Finished!"
 

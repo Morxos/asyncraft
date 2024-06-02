@@ -5,7 +5,7 @@ from asyncraft.pool import Pool
 
 
 def test_sync_handler():
-    handler = SyncHandler("Sync", keys=["Test"],
+    handler = SyncHandler(keys=["Test"],
                           callback=lambda message: Message("Test1" + message.key, "Value1" + message.value))
     message = Message("Test", "Value")
     call_back_value = None
@@ -30,7 +30,7 @@ def test_async_handler():
     async def handler_function(message: Message):
         return Message("Test1" + message.key, "Value1" + message.value)
 
-    handler = AsyncHandler("Async", keys=["Test"],
+    handler = AsyncHandler(keys=["Test"],
                            callback=handler_function)
     message = Message("Test", "Value")
     call_back_value = None
