@@ -1,4 +1,4 @@
-# Asyncraft: Simple message passing with asyncio and threading support
+# Asyncraft: Simple event/message passing library with asyncio and threading support
 A simple event/message passing library for Python 3.8+ supporting asyncio and threading.
 <br>For examples, see the [examples](examples) directory.
 ### Installation
