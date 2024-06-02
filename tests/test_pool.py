@@ -1,4 +1,6 @@
 import asyncio
+
+import asyncraft
 from asyncraft.handler import SyncHandler, AsyncHandler
 from asyncraft.message import Message
 from asyncraft.pool import Pool

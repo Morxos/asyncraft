@@ -62,3 +62,4 @@ def test_queue():
         assert reads1.intersection(reads2) == set()
 
     asyncraft.start(run())
+    asyncraft.shutdown()

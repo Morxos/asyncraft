@@ -104,5 +104,14 @@ def init(new_event_loop: bool = False):
         _global_broker.pool.loop = _event_loop
 
 
+def shutdown():
+    """Shutdown the global broker."""
+    global _global_broker
+    if _global_broker is None:
+        raise ValueError("Broker not initialized.")
+    _global_broker.shutdown()
+    _global_broker = None
+
+
 #Initializes the global broker
 init()

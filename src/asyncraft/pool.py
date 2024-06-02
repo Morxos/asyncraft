@@ -56,4 +56,4 @@ class Pool(AbstractPool):
             logging.error(f"Error in handler {handler.identifier}: {e}")
 
     def shutdown(self) -> None:
-        self.executor.shutdown()
+        self.executor.shutdown(cancel_futures=True)

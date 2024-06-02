@@ -48,6 +48,7 @@ def test_asyncraft():
     assert received_sleep_sync
     assert received_sleep_async
     assert call_count == 1
+    asyncraft.shutdown()
 
 
 def test_asyncraft_cal_and_wait():
@@ -81,3 +82,4 @@ def test_asyncraft_cal_and_wait():
 
     asyncraft.start(main())
     assert called == 2
+    asyncraft.shutdown()
