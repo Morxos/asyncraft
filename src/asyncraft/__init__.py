@@ -15,7 +15,7 @@ def start(runnable: Coroutine[Any, Any, None]):
     """Start the global broker."""
     global _global_broker
     if _global_broker is None:
-        raise ValueError("Broker not initialized. Call init() before start()")
+        raise ValueError("Broker not initialized.")
     loop = _global_broker.loop
     loop.run_until_complete(runnable)
 
@@ -67,15 +67,26 @@ def register_queue(queue: MessageQueue):
     register_handler(async_handler)
 
 
-def reset():
-    """Reset the global broker. Removes all handlers and creates a new event loop. Use with caution."""
+def reset(new_event_loop: bool = False):
+    """Reset the global broker. Removes all handlers and creates a new event loop if desired. Use with caution."""
     global _global_broker
     global _event_loop
     if _global_broker is not None:
         _global_broker.shutdown()
-    event_loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(event_loop)
+
+    try:
+        asyncio.get_running_loop()
+        event_loop_exists = True
+
+    except RuntimeError:
+        event_loop_exists = False
+
+    if new_event_loop or not event_loop_exists:
+        _event_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(_event_loop)
+    _event_loop = asyncio.get_event_loop()
     _global_broker = Broker()
+    _global_broker.loop = _event_loop
 
 
 #Initializes the global broker
