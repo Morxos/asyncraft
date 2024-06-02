@@ -51,7 +51,7 @@ def test_queue():
     async def producer():
         """This producer will write to the queue."""
         for i in range(total_count):
-            asyncraft.broadcast_message(Message(("Key", "Key1"), i))
+            asyncraft.broadcast(Message(("Key", "Key1"), i))
 
             await asyncio.sleep(0)
 
@@ -61,4 +61,4 @@ def test_queue():
         assert len(reads1) + len(reads2) == total_count
         assert reads1.intersection(reads2) == set()
 
-    asyncio.run(run())
+    asyncraft.start(run())

@@ -1,9 +1,11 @@
 import asyncio
-import threading
+import logging
 import time
 
 import asyncraft
 from asyncraft.message import Message
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 def test_asyncraft():
@@ -27,22 +29,22 @@ def test_asyncraft():
         time.sleep(1)
         return Message("Key2", "Calling async")
 
-    asyncraft.register_handler(asyncraft.SyncHandler(keys=["Key1", "Key3"],
+    asyncraft.register_handler(asyncraft.SyncHandler("1", keys=["Key1", "Key3"],
                                                      callback=call_back_value_sync)
                                )
 
-    asyncraft.register_async_handler(asyncraft.AsyncHandler(keys=["Key2"],
-                                                            callback=call_back_value_async)
-                                     )
+    asyncraft.register_handler(asyncraft.AsyncHandler("2", keys=["Key2"],
+                                                      callback=call_back_value_async)
+                               )
 
     async def main():
-        asyncraft.broadcast_message(Message(("Key1", "Key3"), "Calling sync"))
+        asyncraft.broadcast(Message(("Key1", "Key3"), "Calling sync"))
         await asyncio.sleep(0.5)
         assert received_sleep_sync
         assert not received_sleep_async
         await asyncio.sleep(2)
-
-    asyncio.run(main())
+    gb = asyncraft._global_broker
+    asyncraft.start(main())
     assert received_sleep_sync
     assert received_sleep_async
     assert call_count == 1
@@ -52,32 +54,30 @@ def test_asyncraft_cal_and_wait():
     asyncraft.reset()
     called = 0
 
-
-    async def call_back_value_async(message):
+    @asyncraft.asyncraft_handler("2", keys=["Key2"])
+    async def call_back_value_async(message: Message):
+        assert message.key == "Key2"
+        assert message.value == "Calling async"
         nonlocal called
         called += 1
         return Message("Key4", "Sleep Finished!")
 
-    def call_back_value_sync(message):
+    @asyncraft.asyncraft_handler("1", keys=["Key1"])
+    def call_back_value_sync(message: Message):
+        assert message.key == "Key1"
+        assert message.value == "Calling sync"
         nonlocal called
         called += 1
         return Message("Key3", "Calling async")
 
-    asyncraft.register_handler(asyncraft.SyncHandler(keys=["Key1"],
-                                                     callback=call_back_value_sync)
-                               )
-
-    asyncraft.register_async_handler(asyncraft.AsyncHandler(keys=["Key2"],
-                                                            callback=call_back_value_async)
-                                     )
-
     async def main():
+        nonlocal called
         message = await asyncraft.broadcast_and_wait(Message(("Key1"), "Calling sync"), ["Key3"])
         assert message.key == "Key3"
         assert message.value == "Calling async"
-        message = await asyncraft.broadcast_and_wait(Message(("Key2"), "Calling sync"), ["Key4"])
+        message = await asyncraft.broadcast_and_wait(Message(("Key2"), "Calling async"), ["Key4"])
         assert message.key == "Key4"
         assert message.value == "Sleep Finished!"
 
-    asyncio.run(main())
+    asyncraft.start(main())
     assert called == 2

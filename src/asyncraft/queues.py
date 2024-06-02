@@ -26,7 +26,7 @@ class AbstractMessageQueue:
 
 
 class MessageQueue(AbstractMessageQueue):
-    def __init__(self, identifier: KeyType, keys: List[KeyType], max_items: int = 1_000_000,
+    def __init__(self, identifier: str, keys: List[KeyType], max_items: int = -1,
                  eviction_policy: Literal["FIFO"] = "FIFO"):
         self.identifier = identifier
         self.queue: List[Message] = []
@@ -38,7 +38,7 @@ class MessageQueue(AbstractMessageQueue):
 
     async def put(self, message: Message):
         with self.access_semaphore:
-            if len(self.queue) >= self.max_items:
+            if len(self.queue) >= self.max_items != -1:
                 if self.eviction_policy == "FIFO":
                     self.queue.pop(0)
                     logging.warning(f"Queue {self.identifier} is full, evicting oldest message")

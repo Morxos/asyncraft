@@ -13,7 +13,7 @@ version = "0.0.1"
 authors = [
   { name="Kilian Müller", email="kilian@mueller.ai"},
 ]
-description = "Asyncraft is a versatile library tailored for handling asynchronous and synchronous event/message broadcasting across distributed queues, with comprehensive support for callbacks and extensible integration capabilities."
+description = "Simple message/event passing with asyncio and threading support."
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [

@@ -1,34 +1,29 @@
 import asyncio
-from typing import List, Dict
+import logging
+import time
+from typing import List, Dict, Union
 
 from asyncraft.message import Message, KeyType
-from asyncraft.handler import AsyncHandler, SyncHandler
+from asyncraft.handler import AsyncHandler, SyncHandler, AbstractHandler
 from asyncraft.pool import AbstractPool, Pool
 
 
 class AbstractBroker:
-
-    async def async_broadcast_message(self, message: Message) -> None:
-        """Broadcast a message to all handlers"""
-        raise NotImplementedError
+    loop: asyncio.AbstractEventLoop
 
     def broadcast_message(self, message: Message) -> None:
-        """Broadcast a message to all handlers"""
+        """Broadcast a message to all handlers. Is thread safe."""
         raise NotImplementedError
 
-    def register_async_handler(self, handler: AsyncHandler):
-        """Register an async handler to the broker, which will be executed in the asyncio event loop"""
+    def get_next_free_identifier(self, prefix: Union[str, None] = None) -> str:
+        """Get the next free identifier"""
         raise NotImplementedError
 
-    def unregister_async_handler(self, handler: AsyncHandler):
-        """Unregister an async handler from the broker"""
-        raise NotImplementedError
-
-    def register_handler(self, handler: SyncHandler):
+    def register_handler(self, handler: Union[SyncHandler, AsyncHandler]):
         """Register a sync handler to the broker, which will be executed in a thread pool"""
         raise NotImplementedError
 
-    def unregister_handler(self, handler: SyncHandler):
+    def unregister_handler(self, handler: Union[str, SyncHandler, AsyncHandler]):
         """Unregister a sync handler from the broker"""
         raise NotImplementedError
 
@@ -39,62 +34,79 @@ class AbstractBroker:
 
 class Broker(AbstractBroker):
 
-    def __init__(self, pool: AbstractPool = None):
-        self.sync_handlers: Dict[KeyType, List[SyncHandler]] = {}
-        self.async_handlers: Dict[KeyType, List[AsyncHandler]] = {}
+    def __init__(self, pool: AbstractPool = None, loop: asyncio.AbstractEventLoop = None):
+        self.handlers: Dict[KeyType, List[AbstractHandler]] = {}
+        if loop is None:
+            self.loop = asyncio.get_event_loop()
+        else:
+            self.loop = loop
         if pool is None:
-            self.pool = Pool()
+            self.pool = Pool(loop=self.loop)
         else:
             self.pool = pool
 
-    def register_handler(self, handler: SyncHandler):
-        for key in handler.keys:
-            if key not in self.sync_handlers:
-                self.sync_handlers[key] = []
-            self.sync_handlers[key].append(handler)
+    def register_handler(self, handler: AbstractHandler):
 
-    def unregister_handler(self, handler: SyncHandler):
-        for key in handler.keys:
-            if key in self.sync_handlers:
-                self.sync_handlers[key].remove(handler)
+        for handlers in self.handlers.values():
+            for set_handler in handlers:
+                if handler.identifier == set_handler:
+                    raise ValueError(f"Handler with identifier {handler.identifier} already registered")
 
-    def register_async_handler(self, handler: AsyncHandler):
         for key in handler.keys:
-            if key not in self.async_handlers:
-                self.async_handlers[key] = []
-            self.async_handlers[key].append(handler)
+            if key not in self.handlers:
+                self.handlers[key] = []
+            self.handlers[key].append(handler)
 
-    def unregister_async_handler(self, handler: AsyncHandler):
-        for key in handler.keys:
-            if key in self.async_handlers:
-                self.async_handlers[key].remove(handler)
+    def get_next_free_identifier(self, prefix: Union[str, None] = None) -> str:
+        if prefix is None:
+            prefix = "asyncraft_handler"
+        i = 0
+        while True:
+            found = False
+            identifier = f"{prefix}_{i}"
+            for handlers in self.handlers.values():
+                for handler in handlers:
+                    if handler.identifier == identifier:
+                        found = True
+                        break
+                if found:
+                    break
+            if not found:
+                return identifier
+            i += 1
+
+    def unregister_handler(self, handler: Union[str, AbstractHandler]):
+        if isinstance(handler, AbstractHandler):
+            identifier = handler.identifier
+        elif isinstance(handler, str):
+            identifier = handler
+        else:
+            raise ValueError(f"Handler must be of type AbstractHandler or str, not {type(handler)}")
+        for key in self.handlers:
+            self.handlers[key] = [h for h in self.handlers[key] if h.identifier != identifier]
 
     def broadcast_message(self, message: Message) -> None:
-        if message is None:
-            return
-        asyncio.run_coroutine_threadsafe(self.async_broadcast_message(message), asyncio.get_running_loop())
-
-    async def async_broadcast_message(self, message: Message) -> None:
         if message is None:
             return
         already_contacted = set()
         #Needed to contact handlers only once
         message_key = message.key if isinstance(message.key, tuple) else (message.key,)
+        found = False
         for key in message_key:
-            if key in self.sync_handlers:
-                for handler in self.sync_handlers[key]:
-                    if handler in already_contacted:
+            if key in self.handlers:
+                for handler in self.handlers[key]:
+                    if handler.identifier in already_contacted:
                         continue
-                    await self.pool.execute_handler(handler, message, self.broadcast_message)
-                    already_contacted.add(handler)
-            if key in self.async_handlers:
-                for handler in self.async_handlers[key]:
-                    if handler in already_contacted:
-                        continue
-                    await self.pool.execute_async_handler(handler, message, self.broadcast_message)
-                    already_contacted.add(handler)
+                    if handler.handler_type == "Sync":
+                        self.pool.execute_handler(handler, message, self.broadcast_message)
+                    elif handler.handler_type == "Async":
+                        self.pool.execute_async_handler(handler, message, self.broadcast_message)
+
+                    already_contacted.add(handler.identifier)
+                    found = True
+        if not found:
+            logging.warning(f"No handler found for message {message}")
 
     def shutdown(self):
         self.pool.shutdown()
-        self.sync_handlers.clear()
-        self.async_handlers.clear()
+        self.handlers.clear()
